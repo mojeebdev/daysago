@@ -1,53 +1,70 @@
 # daysago
 
-A minimal, live-ticking "X was Y days ago" site. Split-flap counter for 2020 as
-the hook, a few pre-loaded shockers, and a generator so people can plug in
-their own date and share a card to X.
+A minimal Next.js web app that answers the viral prompt “2020 was how many
+days ago?” with:
+
+- a live, ticking split-flap hero counter,
+- a set of preloaded reference shockers,
+- a generator that creates shareable cards and X tweet links,
+- on-the-fly OG image rendering via a Next.js edge route.
 
 ## Run locally
 
 ```bash
-pnpm install   # or npm install
-pnpm dev       # or npm run dev
+npm install
+npm run dev
 ```
 
-Note: this build failed in the sandboxed environment I built it in only
-because that sandbox blocks `fonts.googleapis.com` — everything else
-(TypeScript, ESLint, all routes) checks out clean. `next/font/google` fetches
-JetBrains Mono + Manrope at build time, so on your machine / Vercel this will
-build fine.
+## Stack
+
+- `next` 16.2.10
+- `react` 19.2.4
+- `react-dom` 19.2.4
+- `typescript` 5
+- `eslint` 9 + `eslint-config-next` 16.2.10
+- `tailwindcss` 4 + `@tailwindcss/postcss`
+- `html-to-image` for client-side PNG card export
+
+## What’s inside
+
+- `app/layout.tsx`
+  - root layout using `next/font/google`
+  - exports `SITE_URL` used for share links and dynamic metadata
+- `app/page.tsx`
+  - composes `HeroCounter`, `ShockerRow`, and `Generator`
+  - `generateMetadata` reads `?label=&date=` and builds dynamic Open Graph metadata
+- `app/api/og/route.tsx`
+  - edge runtime route using `next/og`
+  - generates a social preview image from query data
+  - supports explicit `days` override for anchored hero share cards
+- `components/FlipDigit.tsx`
+  - client component for one split-flap digit
+  - animates a 3D flip when the value changes
+- `components/FlipGroup.tsx`
+  - renders a row of `FlipDigit` characters
+- `components/HeroCounter.tsx`
+  - live client-side ticking counter that updates every second
+  - uses anchored day math so the 2020 count increments cleanly at UTC midnight
+- `components/ShockerRow.tsx`
+  - renders reference cards for preloaded shockers with live elapsed-day updates
+- `components/Generator.tsx`
+  - accepts label + date input
+  - renders share card, copy link, X tweet link, and download PNG via `html-to-image`
+- `lib/dates.ts`
+  - shared time calculations for anchors, elapsed days, formatting, and padding
+- `app/globals.css`
+  - Tailwind CSS imported with `@import "tailwindcss"`
+  - custom theme variables and split-flap animation styles
 
 ## Before you deploy
 
-1. **Set your real URL** in `app/layout.tsx` → `export const SITE_URL`. This
-   is used for OG tags, the share links, and the X intent links. It needs to
-   be right or the shared cards won't preview correctly on X.
-2. Push to GitHub, import into Vercel, deploy to a `*.vercel.app` domain —
-   zero config needed beyond that.
+1. Set your real URL in `app/layout.tsx` → `export const SITE_URL`.
+   This is used for OG tags, the share links, and the X intent tweet links.
+2. Push to GitHub and deploy on Vercel or another Next.js-compatible host.
 
-## How it's put together
+## Notes
 
-- `app/page.tsx` — assembles the hero, shocker row, and generator. Also
-  defines `generateMetadata`, which reads `?label=&date=` from the URL so
-  every generated/shared link gets its own dynamic OG title + image (this is
-  the growth loop — a shared link previews the actual stat, not a generic
-  homepage card).
-- `app/api/og/route.tsx` — edge route that renders the OG image on the fly
-  with `next/og`, styled to match the split-flap board.
-- `components/FlipDigit.tsx` / `FlipGroup.tsx` — the signature element: a
-  single character that does a 3D flip when its value changes, styled like an
-  airport departures board. Respects `prefers-reduced-motion`.
-- `components/HeroCounter.tsx` — the big 2020 counter, ticking live down to
-  the second.
-- `components/ShockerRow.tsx` — smaller pre-loaded reference points
-  (`lib/dates.ts` → `SHOCKERS`). Add/remove entries there.
-- `components/Generator.tsx` — user input → flip-card result → share to X /
-  copy link / download PNG (via `html-to-image`).
-
-## Easy tweaks
-
-- **Add a shocker**: edit the `SHOCKERS` array in `lib/dates.ts`.
-- **Change the palette**: all colors are CSS variables at the top of
-  `app/globals.css` (`--ink`, `--board`, `--bone`, `--amber`, `--slate`).
-- **Change the flip speed**: `280ms` in `components/FlipDigit.tsx` and the
-  matching `flip-turn` animation duration in `globals.css`.
+- No external API integrations are required.
+- No database or storage layer is included.
+- No authentication is required.
+- The only server-side code is the Next.js edge OG image route.
