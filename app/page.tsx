@@ -68,7 +68,7 @@ export default function Home() {
           </span>{" "}
           by{" "}
           <a
-            href="https://x.com/tmojeeb"
+            href="https://x.com/MojeebMotion"
             target="_blank"
             rel="noopener noreferrer"
           >
